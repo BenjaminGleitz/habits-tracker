@@ -82,6 +82,10 @@ export default function HomeScreen({ navigation }: Props) {
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
                 <View style={styles.card}>
+                  <Button
+                      title="Détail"
+                      onPress={() => navigation.navigate('HabitDetail', { habitId: item.id })}
+                  />
                   <Text style={styles.title}>{item.title}</Text>
                   {item.description ? (
                       <Text style={styles.description}>{item.description}</Text>
