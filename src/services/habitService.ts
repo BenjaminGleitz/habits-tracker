@@ -53,3 +53,44 @@ export async function updateHabit(id: string, updates: { title: string; descript
 export async function deleteHabit(id: string) {
   return supabase.from('habits').delete().eq('id', id);
 }
+
+export async function markHabitDoneToday(
+    userId: string,
+    habitId: string
+) {
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+      .from('habit_logs')
+      .upsert(
+          {
+            habit_id: habitId,
+            user_id: userId,
+            date: today,
+            done: true,
+          },
+          {
+            onConflict: 'habit_id,user_id,date',
+          }
+      );
+
+  return { data, error };
+}
+
+export async function isHabitDoneToday(
+    userId: string,
+    habitId: string
+) {
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+      .from('habit_logs')
+      .select('*')
+      .eq('habit_id', habitId)
+      .eq('user_id', userId)
+      .eq('date', today)
+      .single();
+
+  return { done: !!data, error };
+}
+

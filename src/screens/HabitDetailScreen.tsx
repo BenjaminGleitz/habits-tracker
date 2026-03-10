@@ -28,7 +28,10 @@ export default function HabitDetailScreen({ route, navigation }: Props) {
   const [habit, setHabit] = useState<{ id: string; title: string; description: string | null } | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const loadHabit = useCallback(async () => {
+  const [doneToday, setDoneToday] = useState(false);
+  const [marking, setMarking] = useState(false);
+
+  const loadHabitAndStatus = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
 
@@ -61,6 +64,30 @@ export default function HabitDetailScreen({ route, navigation }: Props) {
       loadHabit();
     }, [loadHabit])
   );
+
+  async function handleMarkDone() {
+    setMarking(true);
+
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const session = sessionData.session;
+
+    if (sessionError || !session) {
+      setMarking(false);
+      Alert.alert('Erreur', 'Session invalide. Reconnecte-toi.');
+      return;
+    }
+
+    const { error } = await markHabitDoneToday(session.user.id, habitId);
+
+    setMarking(false);
+
+    if (error) {
+      Alert.alert('Erreur', error.message);
+      return;
+    }
+
+    setDoneToday(true);
+  }
 
   async function handleDelete() {
     Alert.alert('Supprimer', 'Tu veux supprimer cette habitude ?', [
