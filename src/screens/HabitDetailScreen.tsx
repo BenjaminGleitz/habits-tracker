@@ -1,23 +1,11 @@
 import { useCallback, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  Button,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Alert, Pressable } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { AppStackParamList } from '../types/navigation';
-import { supabase } from '../services/supabaseClient';
-import {
-  getHabitById,
-  deleteHabit,
-  markHabitDoneToday,
-  isHabitDoneToday,
-} from '../services/habitService';
+import { getHabitById, deleteHabit } from '../services/habitService';
+import { colors, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HabitDetail'>;
 
@@ -138,30 +126,29 @@ export default function HabitDetailScreen({ route, navigation }: Props) {
 
         <View style={styles.spacer} />
 
-        <Button
-            title={doneToday ? 'Fait aujourd’hui ✅' : marking ? 'Validation...' : 'Marquer comme fait aujourd’hui'}
-            onPress={handleMarkDone}
-            disabled={doneToday || marking}
-        />
+        <Pressable style={({ pressed }) => [styles.editButton, pressed && styles.editButtonPressed]} onPress={() => navigation.navigate('HabitForm', { habitId })}>
+          <Text style={styles.editButtonText}>Modifier</Text>
+        </Pressable>
 
         <View style={styles.spacer} />
 
-        <Button
-            title="Modifier"
-            onPress={() => navigation.navigate('HabitForm', { habitId })}
-        />
-
-        <View style={styles.spacer} />
-
-        <Button title="Supprimer" onPress={handleDelete} />
+        <Pressable style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]} onPress={handleDelete}>
+          <Text style={styles.deleteButtonText}>Supprimer</Text>
+        </Pressable>
       </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
+  container: { flex: 1, padding: spacing.lg, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 22, fontWeight: '700' },
-  description: { marginTop: 8, color: '#555' },
+  title: { fontSize: 26, fontWeight: '800', color: colors.text },
+  description: { marginTop: 8, color: colors.textMuted, lineHeight: 21 },
   spacer: { height: 12 },
+  editButton: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  editButtonPressed: { backgroundColor: colors.primaryPressed },
+  editButtonText: { color: '#fff', fontWeight: '700' },
+  deleteButton: { backgroundColor: colors.danger, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  deleteButtonPressed: { backgroundColor: colors.dangerPressed },
+  deleteButtonText: { color: '#fff', fontWeight: '700' },
 });
