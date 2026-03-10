@@ -10,56 +10,59 @@ import { colors, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HabitDetail'>;
 
+const REQUEST_TIMEOUT_MS = 12000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error('timeout')), timeoutMs);
+    }),
+  ]);
+}
+
 export default function HabitDetailScreen({ route, navigation }: Props) {
   const { habitId } = route.params;
 
   const [loading, setLoading] = useState(true);
-  const [habit, setHabit] = useState<{
-    id: string;
-    title: string;
-    description: string | null;
-  } | null>(null);
+  const [habit, setHabit] = useState<{ id: string; title: string; description: string | null } | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [doneToday, setDoneToday] = useState(false);
   const [marking, setMarking] = useState(false);
 
   const loadHabitAndStatus = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
 
-    // 1) charge l'habitude
-    const { data, error } = await getHabitById(habitId);
-
-    if (error) {
-      Alert.alert('Erreur', error.message);
-      setHabit(null);
-      setLoading(false);
-      return;
-    }
-
-    setHabit(data ? { id: data.id, title: data.title, description: data.description } : null);
-
-    // 2) charge l'état "fait aujourd'hui"
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    const session = sessionData.session;
-
-    if (!sessionError && session) {
-      const { done, error: doneError } = await isHabitDoneToday(session.user.id, habitId);
-      if (doneError && doneError.code !== 'PGRST116') {
-        // PGRST116 = "No rows found" (pas de log pour aujourd'hui) -> pas une vraie erreur pour nous
-        Alert.alert('Erreur', doneError.message);
+    try {
+      if (!habitId) {
+        throw new Error('missing_habit_id');
       }
-      setDoneToday(done);
-    } else {
-      setDoneToday(false);
-    }
 
-    setLoading(false);
+      const { data, error } = await withTimeout(getHabitById(habitId));
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setHabit(data ?? null);
+    } catch (error) {
+      const message = error instanceof Error && error.message === 'timeout'
+        ? "Le chargement est trop long. Vérifie ta connexion puis réessaie."
+        : "Impossible de charger cette habitude. Réessaie.";
+
+      setLoadError(message);
+      setHabit(null);
+    } finally {
+      setLoading(false);
+    }
   }, [habitId]);
 
   useFocusEffect(
-      useCallback(() => {
-        loadHabitAndStatus();
-      }, [loadHabitAndStatus])
+    useCallback(() => {
+      loadHabit();
+    }, [loadHabit])
   );
 
   async function handleMarkDone() {
@@ -133,51 +136,66 @@ export default function HabitDetailScreen({ route, navigation }: Props) {
 
   if (loading) {
     return (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" />
-        </View>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+        <Text style={styles.helperText}>Chargement en cours...</Text>
+      </View>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>{loadError}</Text>
+        <Pressable style={({ pressed }) => [styles.retryButton, pressed && styles.retryButtonPressed]} onPress={loadHabit}>
+          <Text style={styles.retryButtonText}>Réessayer</Text>
+        </Pressable>
+      </View>
     );
   }
 
   if (!habit) {
     return (
-        <View style={styles.center}>
-          <Text>Habitude introuvable.</Text>
-        </View>
+      <View style={styles.center}>
+        <Text>Habitude introuvable.</Text>
+        <Pressable style={({ pressed }) => [styles.retryButton, pressed && styles.retryButtonPressed]} onPress={loadHabit}>
+          <Text style={styles.retryButtonText}>Recharger</Text>
+        </Pressable>
+      </View>
     );
   }
 
   return (
-      <View style={styles.container}>
-        <Text style={styles.title}>{habit.title}</Text>
-        {habit.description ? <Text style={styles.description}>{habit.description}</Text> : null}
+    <View style={styles.container}>
+      <Text style={styles.title}>{habit.title}</Text>
+      {habit.description ? <Text style={styles.description}>{habit.description}</Text> : null}
 
-        <View style={styles.spacer} />
+      <View style={styles.spacer} />
 
-        <Pressable style={({ pressed }) => [styles.reminderButton, pressed && styles.reminderButtonPressed]} onPress={handleScheduleReminder}>
-          <Text style={styles.reminderButtonText}>Rappel local (10s)</Text>
-        </Pressable>
+      <Pressable style={({ pressed }) => [styles.reminderButton, pressed && styles.reminderButtonPressed]} onPress={handleScheduleReminder}>
+        <Text style={styles.reminderButtonText}>Rappel local (10s)</Text>
+      </Pressable>
 
-        <Text style={styles.helperText}>En cas de refus de permission, le rappel n'est pas créé.</Text>
+      <Text style={styles.helperText}>En cas de refus de permission, le rappel n'est pas créé.</Text>
 
-        <View style={styles.spacer} />
+      <View style={styles.spacer} />
 
-        <Pressable style={({ pressed }) => [styles.editButton, pressed && styles.editButtonPressed]} onPress={() => navigation.navigate('HabitForm', { habitId })}>
-          <Text style={styles.editButtonText}>Modifier</Text>
-        </Pressable>
+      <Pressable style={({ pressed }) => [styles.editButton, pressed && styles.editButtonPressed]} onPress={() => navigation.navigate('HabitForm', { habitId })}>
+        <Text style={styles.editButtonText}>Modifier</Text>
+      </Pressable>
 
-        <View style={styles.spacer} />
+      <View style={styles.spacer} />
 
-        <Pressable style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]} onPress={handleDelete}>
-          <Text style={styles.deleteButtonText}>Supprimer</Text>
-        </Pressable>
-      </View>
+      <Pressable style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]} onPress={handleDelete}>
+        <Text style={styles.deleteButtonText}>Supprimer</Text>
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: spacing.lg, backgroundColor: colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
   title: { fontSize: 26, fontWeight: '800', color: colors.text },
   description: { marginTop: 8, color: colors.textMuted, lineHeight: 21 },
   spacer: { height: 12 },
@@ -189,11 +207,21 @@ const styles = StyleSheet.create({
   },
   reminderButtonPressed: { backgroundColor: '#155E75' },
   reminderButtonText: { color: '#fff', fontWeight: '700' },
-  helperText: { marginTop: 8, color: colors.textMuted, fontSize: 12 },
+  helperText: { marginTop: 8, color: colors.textMuted, fontSize: 12, textAlign: 'center' },
   editButton: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   editButtonPressed: { backgroundColor: colors.primaryPressed },
   editButtonText: { color: '#fff', fontWeight: '700' },
   deleteButton: { backgroundColor: colors.danger, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   deleteButtonPressed: { backgroundColor: colors.dangerPressed },
   deleteButtonText: { color: '#fff', fontWeight: '700' },
+  retryButton: {
+    marginTop: spacing.md,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+  },
+  retryButtonPressed: { backgroundColor: colors.primaryPressed },
+  retryButtonText: { color: '#fff', fontWeight: '700' },
+  errorText: { color: colors.danger, textAlign: 'center' },
 });
