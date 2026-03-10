@@ -1,5 +1,6 @@
-import { View, Text, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert, Pressable } from 'react-native';
 import { signOut } from '../services/authService';
+import { colors, spacing } from '../theme';
 
 export default function SettingsScreen() {
   async function handleLogout() {
@@ -14,7 +15,9 @@ export default function SettingsScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>Paramètres</Text>
 
-        <Button title="Se déconnecter" onPress={handleLogout} />
+        <Pressable style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutButtonPressed]} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>Se déconnecter</Text>
+        </Pressable>
       </View>
   );
 }
@@ -23,11 +26,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
+    padding: spacing.lg,
+    backgroundColor: colors.background,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '600',
-    marginBottom: 20,
+    fontSize: 26,
+    fontWeight: '800',
+    marginBottom: spacing.md,
+    color: colors.text,
   },
+  logoutButton: {
+    backgroundColor: colors.danger,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  logoutButtonPressed: { backgroundColor: colors.dangerPressed },
+  logoutButtonText: { color: '#fff', fontWeight: '700' },
 });
