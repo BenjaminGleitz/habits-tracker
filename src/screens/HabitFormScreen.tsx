@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert, ActivityIndicator, Pressable } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { AppStackParamList } from '../types/navigation';
 import { supabase } from '../services/supabaseClient';
 import { createHabit, getHabitById, updateHabit } from '../services/habitService';
+import { colors, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HabitForm'>;
 
@@ -110,20 +111,32 @@ export default function HabitFormScreen({ navigation, route }: Props) {
             multiline
         />
 
-        <Button title={loading ? 'Enregistrement...' : isEdit ? 'Enregistrer' : 'Créer'} onPress={handleSave} />
+        <Pressable style={({ pressed }) => [styles.saveButton, pressed && styles.saveButtonPressed]} onPress={handleSave}>
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>{isEdit ? 'Enregistrer' : 'Créer'}</Text>}
+        </Pressable>
       </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, gap: 10 },
+  container: { flex: 1, padding: spacing.lg, gap: spacing.sm, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  label: { fontWeight: '600' },
+  label: { fontWeight: '700', color: colors.text },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.border,
     padding: 12,
     borderRadius: 10,
+    backgroundColor: colors.surface,
   },
   textarea: { height: 90, textAlignVertical: 'top' },
+  saveButton: {
+    marginTop: spacing.md,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  saveButtonPressed: { backgroundColor: colors.primaryPressed },
+  saveButtonText: { color: '#fff', fontWeight: '700' },
 });

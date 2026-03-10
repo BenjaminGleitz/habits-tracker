@@ -1,10 +1,12 @@
 import { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Button, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Alert, Pressable } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { AppStackParamList } from '../types/navigation';
 import { getHabitById, deleteHabit } from '../services/habitService';
+import { scheduleHabitReminder } from '../services/reminderService';
+import { colors, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HabitDetail'>;
 
@@ -52,6 +54,33 @@ export default function HabitDetailScreen({ route, navigation }: Props) {
     ]);
   }
 
+  async function handleScheduleReminder() {
+    if (!habit?.title) {
+      return;
+    }
+
+    Alert.alert(
+      'Activer un rappel',
+      "On va te demander la permission de notifications (Android 13+) pour te rappeler cette habitude.",
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Continuer',
+          onPress: async () => {
+            const result = await scheduleHabitReminder(habit.title, 10);
+
+            if (!result.ok) {
+              Alert.alert('Permission refusée', 'Tu as refusé la permission notifications. Le rappel n\'a pas été programmé.');
+              return;
+            }
+
+            Alert.alert('Rappel créé', 'Un rappel local sera déclenché dans 10 secondes.');
+          },
+        },
+      ]
+    );
+  }
+
   if (loading) {
     return (
         <View style={styles.center}>
@@ -75,22 +104,46 @@ export default function HabitDetailScreen({ route, navigation }: Props) {
 
         <View style={styles.spacer} />
 
-        <Button
-            title="Modifier"
-            onPress={() => navigation.navigate('HabitForm', { habitId })}
-        />
+        <Pressable style={({ pressed }) => [styles.reminderButton, pressed && styles.reminderButtonPressed]} onPress={handleScheduleReminder}>
+          <Text style={styles.reminderButtonText}>Rappel local (10s)</Text>
+        </Pressable>
+
+        <Text style={styles.helperText}>En cas de refus de permission, le rappel n'est pas créé.</Text>
 
         <View style={styles.spacer} />
 
-        <Button title="Supprimer" onPress={handleDelete} />
+        <Pressable style={({ pressed }) => [styles.editButton, pressed && styles.editButtonPressed]} onPress={() => navigation.navigate('HabitForm', { habitId })}>
+          <Text style={styles.editButtonText}>Modifier</Text>
+        </Pressable>
+
+        <View style={styles.spacer} />
+
+        <Pressable style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]} onPress={handleDelete}>
+          <Text style={styles.deleteButtonText}>Supprimer</Text>
+        </Pressable>
       </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
+  container: { flex: 1, padding: spacing.lg, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 22, fontWeight: '700' },
-  description: { marginTop: 8, color: '#555' },
+  title: { fontSize: 26, fontWeight: '800', color: colors.text },
+  description: { marginTop: 8, color: colors.textMuted, lineHeight: 21 },
   spacer: { height: 12 },
+  reminderButton: {
+    backgroundColor: '#0E7490',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  reminderButtonPressed: { backgroundColor: '#155E75' },
+  reminderButtonText: { color: '#fff', fontWeight: '700' },
+  helperText: { marginTop: 8, color: colors.textMuted, fontSize: 12 },
+  editButton: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  editButtonPressed: { backgroundColor: colors.primaryPressed },
+  editButtonText: { color: '#fff', fontWeight: '700' },
+  deleteButton: { backgroundColor: colors.danger, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  deleteButtonPressed: { backgroundColor: colors.dangerPressed },
+  deleteButtonText: { color: '#fff', fontWeight: '700' },
 });
