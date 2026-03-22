@@ -7,7 +7,7 @@ import { AppStackParamList } from '../types/navigation';
 import { getHabitById, deleteHabit, markHabitDoneToday } from '../services/habitService';
 import { scheduleHabitReminder } from '../services/reminderService';
 import { supabase } from '../services/supabaseClient';
-import { colors, spacing } from '../theme';
+import { colors, elevation, radii, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HabitDetail'>;
 
@@ -50,8 +50,8 @@ export default function HabitDetailScreen({ route, navigation }: Props) {
       setHabit(data ?? null);
     } catch (error) {
       const message = error instanceof Error && error.message === 'timeout'
-        ? "Le chargement est trop long. Vérifie ta connexion puis réessaie."
-        : "Impossible de charger cette habitude. Réessaie.";
+        ? 'Le chargement est trop long. Vérifie ta connexion puis réessaie.'
+        : 'Impossible de charger cette habitude. Réessaie.';
 
       setLoadError(message);
       setHabit(null);
@@ -115,7 +115,7 @@ export default function HabitDetailScreen({ route, navigation }: Props) {
 
     Alert.alert(
       'Activer un rappel',
-        "On va te demander la permission de notifications pour te rappeler cette habitude.",
+      'On va te demander la permission de notifications pour te rappeler cette habitude.',
       [
         { text: 'Annuler', style: 'cancel' },
         {
@@ -138,7 +138,7 @@ export default function HabitDetailScreen({ route, navigation }: Props) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.helperText}>Chargement en cours...</Text>
       </View>
     );
@@ -158,7 +158,7 @@ export default function HabitDetailScreen({ route, navigation }: Props) {
   if (!habit) {
     return (
       <View style={styles.center}>
-        <Text>Habitude introuvable.</Text>
+        <Text style={styles.helperText}>Habitude introuvable.</Text>
         <Pressable style={({ pressed }) => [styles.retryButton, pressed && styles.retryButtonPressed]} onPress={loadHabit}>
           <Text style={styles.retryButtonText}>Recharger</Text>
         </Pressable>
@@ -168,57 +168,70 @@ export default function HabitDetailScreen({ route, navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{habit.title}</Text>
-      {habit.description ? <Text style={styles.description}>{habit.description}</Text> : null}
+      <View style={styles.card}>
+        <Text style={styles.title}>{habit.title}</Text>
+        {habit.description ? <Text style={styles.description}>{habit.description}</Text> : null}
 
-      <View style={styles.spacer} />
+        <Pressable style={({ pressed }) => [styles.accentButton, pressed && styles.accentButtonPressed]} onPress={handleScheduleReminder}>
+          <Text style={styles.buttonText}>Rappel local (10s)</Text>
+        </Pressable>
 
-      <Pressable style={({ pressed }) => [styles.reminderButton, pressed && styles.reminderButtonPressed]} onPress={handleScheduleReminder}>
-        <Text style={styles.reminderButtonText}>Rappel local (10s)</Text>
-      </Pressable>
+        <Pressable style={({ pressed }) => [styles.doneButton, pressed && styles.doneButtonPressed]} onPress={handleMarkDone}>
+          {marking ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{doneToday ? 'Déjà validée aujourd’hui' : 'Marquer comme faite aujourd’hui'}</Text>}
+        </Pressable>
 
-      <Text style={styles.helperText}>En cas de refus de permission, le rappel n'est pas créé.</Text>
+        <Pressable style={({ pressed }) => [styles.editButton, pressed && styles.editButtonPressed]} onPress={() => navigation.navigate('HabitForm', { habitId })}>
+          <Text style={styles.buttonText}>Modifier</Text>
+        </Pressable>
 
-      <View style={styles.spacer} />
+        <Pressable style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]} onPress={handleDelete}>
+          <Text style={styles.buttonText}>Supprimer</Text>
+        </Pressable>
 
-      <Pressable style={({ pressed }) => [styles.editButton, pressed && styles.editButtonPressed]} onPress={() => navigation.navigate('HabitForm', { habitId })}>
-        <Text style={styles.editButtonText}>Modifier</Text>
-      </Pressable>
-
-      <View style={styles.spacer} />
-
-      <Pressable style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]} onPress={handleDelete}>
-        <Text style={styles.deleteButtonText}>Supprimer</Text>
-      </Pressable>
+        <Text style={styles.helperText}>En cas de refus de permission, le rappel n'est pas créé.</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: spacing.lg, backgroundColor: colors.background },
+  card: {
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceStrong,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    ...elevation.card,
+  },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
   title: { fontSize: 26, fontWeight: '800', color: colors.text },
-  description: { marginTop: 8, color: colors.textMuted, lineHeight: 21 },
-  spacer: { height: 12 },
-  reminderButton: {
-    backgroundColor: '#0E7490',
-    borderRadius: 12,
+  description: { marginBottom: spacing.sm, color: colors.textMuted, lineHeight: 21 },
+  accentButton: {
+    backgroundColor: colors.accent,
+    borderRadius: radii.md,
     paddingVertical: 14,
     alignItems: 'center',
   },
-  reminderButtonPressed: { backgroundColor: '#155E75' },
-  reminderButtonText: { color: '#fff', fontWeight: '700' },
-  helperText: { marginTop: 8, color: colors.textMuted, fontSize: 12, textAlign: 'center' },
-  editButton: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  accentButtonPressed: { backgroundColor: colors.accentPressed },
+  doneButton: {
+    backgroundColor: colors.primary,
+    borderRadius: radii.md,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  doneButtonPressed: { backgroundColor: colors.primaryPressed },
+  editButton: { backgroundColor: colors.primary, borderRadius: radii.md, paddingVertical: 14, alignItems: 'center' },
   editButtonPressed: { backgroundColor: colors.primaryPressed },
-  editButtonText: { color: '#fff', fontWeight: '700' },
-  deleteButton: { backgroundColor: colors.danger, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  deleteButton: { backgroundColor: colors.danger, borderRadius: radii.md, paddingVertical: 14, alignItems: 'center' },
   deleteButtonPressed: { backgroundColor: colors.dangerPressed },
-  deleteButtonText: { color: '#fff', fontWeight: '700' },
+  buttonText: { color: '#fff', fontWeight: '700' },
+  helperText: { marginTop: 8, color: colors.textMuted, fontSize: 12, textAlign: 'center' },
   retryButton: {
     marginTop: spacing.md,
     backgroundColor: colors.primary,
-    borderRadius: 12,
+    borderRadius: radii.md,
     paddingVertical: 12,
     paddingHorizontal: 18,
   },

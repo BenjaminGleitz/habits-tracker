@@ -5,7 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../types/navigation';
 import { supabase } from '../services/supabaseClient';
 import { createHabit, getHabitById, updateHabit } from '../services/habitService';
-import { colors, spacing } from '../theme';
+import { colors, elevation, radii, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HabitForm'>;
 
@@ -91,49 +91,62 @@ export default function HabitFormScreen({ navigation, route }: Props) {
 
   if (initialLoading) {
     return (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" />
-        </View>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
     );
   }
 
   return (
-      <View style={styles.container}>
+    <View style={styles.container}>
+      <View style={styles.card}>
         <Text style={styles.label}>Titre</Text>
-        <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="Ex: Lire 20 min" />
+        <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="Ex: Lire 20 min" placeholderTextColor={colors.textMuted} />
 
         <Text style={styles.label}>Description (optionnel)</Text>
         <TextInput
-            style={[styles.input, styles.textarea]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Ex: avant de dormir"
-            multiline
+          style={[styles.input, styles.textarea]}
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Ex: avant de dormir"
+          placeholderTextColor={colors.textMuted}
+          multiline
         />
 
         <Pressable style={({ pressed }) => [styles.saveButton, pressed && styles.saveButtonPressed]} onPress={handleSave}>
           {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>{isEdit ? 'Enregistrer' : 'Créer'}</Text>}
         </Pressable>
       </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: spacing.lg, gap: spacing.sm, backgroundColor: colors.background },
+  container: { flex: 1, padding: spacing.lg, backgroundColor: colors.background },
+  card: {
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceStrong,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    ...elevation.card,
+  },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   label: { fontWeight: '700', color: colors.text },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
     padding: 12,
-    borderRadius: 10,
+    borderRadius: radii.md,
     backgroundColor: colors.surface,
+    color: colors.text,
   },
   textarea: { height: 90, textAlignVertical: 'top' },
   saveButton: {
     marginTop: spacing.md,
     backgroundColor: colors.primary,
-    borderRadius: 12,
+    borderRadius: radii.md,
     paddingVertical: 14,
     alignItems: 'center',
   },

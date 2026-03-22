@@ -16,7 +16,7 @@ import { AppStackParamList } from '../types/navigation';
 import { supabase } from '../services/supabaseClient';
 import { getHabits, deleteHabit } from '../services/habitService';
 import type { Habit } from '../types/habit';
-import { colors, spacing } from '../theme';
+import { colors, elevation, radii, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
@@ -29,16 +29,16 @@ export default function HomeScreen({ navigation }: Props) {
   }
 
   useFocusEffect(
-      useCallback(() => {
-        loadHabits();
-      }, [])
+    useCallback(() => {
+      loadHabits();
+    }, [])
   );
 
   async function loadHabits() {
     setLoading(true);
 
     const { data: sessionData, error: sessionError } =
-        await supabase.auth.getSession();
+      await supabase.auth.getSession();
 
     const session = sessionData.session;
 
@@ -58,6 +58,7 @@ export default function HomeScreen({ navigation }: Props) {
         hasCache = true;
       }
     } catch {
+      // ignore cache parsing errors
     }
 
     const { data, error } = await getHabits(session);
@@ -73,6 +74,7 @@ export default function HomeScreen({ navigation }: Props) {
       try {
         await AsyncStorage.setItem(cacheKey, JSON.stringify(data));
       } catch {
+        // ignore cache write errors
       }
     }
 
@@ -92,75 +94,81 @@ export default function HomeScreen({ navigation }: Props) {
 
   if (loading) {
     return (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" />
-        </View>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
     );
   }
 
   return (
-      <View style={styles.container}>
-        <Pressable
-            style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
-            onPress={() => navigation.navigate('HabitForm')}
-        >
-          <Text style={styles.addButtonText}>+ Ajouter une habitude</Text>
-        </Pressable>
+    <View style={styles.container}>
+      <Pressable
+        style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
+        onPress={() => navigation.navigate('HabitForm')}
+      >
+        <Text style={styles.addButtonText}>+ Ajouter une habitude</Text>
+      </Pressable>
 
-        <FlatList
-            data={habits}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-                <View style={styles.card}>
-                  <Text style={styles.title}>{item.title}</Text>
-                  {item.description ? (
-                      <Text style={styles.description}>{item.description}</Text>
-                  ) : null}
+      <FlatList
+        data={habits}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Text style={styles.title}>{item.title}</Text>
+            {item.description ? (
+              <Text style={styles.description}>{item.description}</Text>
+            ) : null}
 
-                  <View style={styles.rowActions}>
-                    <Pressable
-                        style={({ pressed }) => [styles.detailButton, pressed && styles.detailButtonPressed]}
-                        onPress={() => navigation.navigate('HabitDetail', { habitId: item.id })}
-                    >
-                      <Text style={styles.detailButtonText}>Détail</Text>
-                    </Pressable>
+            <View style={styles.rowActions}>
+              <Pressable
+                style={({ pressed }) => [styles.detailButton, pressed && styles.detailButtonPressed]}
+                onPress={() => navigation.navigate('HabitDetail', { habitId: item.id })}
+              >
+                <Text style={styles.detailButtonText}>Détail</Text>
+              </Pressable>
 
-                    <Pressable
-                        style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]}
-                        onPress={() => handleDelete(item.id)}
-                    >
-                      <Text style={styles.deleteButtonText}>Supprimer</Text>
-                    </Pressable>
-                  </View>
-                </View>
-            )}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>Aucune habitude</Text>
-            }
-        />
-      </View>
+              <Pressable
+                style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]}
+                onPress={() => handleDelete(item.id)}
+              >
+                <Text style={styles.deleteButtonText}>Supprimer</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+        ListEmptyComponent={
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>Aucune habitude pour le moment.</Text>
+          </View>
+        }
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: spacing.lg, backgroundColor: colors.background },
+  listContent: { paddingBottom: spacing.lg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   addButton: {
     backgroundColor: colors.primary,
-    borderRadius: 12,
+    borderRadius: radii.lg,
     paddingVertical: 14,
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
+    ...elevation.card,
   },
   addButtonPressed: { backgroundColor: colors.primaryPressed },
   addButtonText: { color: '#fff', fontWeight: '700' },
   card: {
-    padding: 15,
-    borderRadius: 14,
-    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    backgroundColor: colors.surfaceStrong,
     marginVertical: 8,
     borderWidth: 1,
     borderColor: colors.border,
+    ...elevation.card,
   },
   title: { fontWeight: '700', fontSize: 17, color: colors.text },
   description: { marginTop: 4, color: colors.textMuted },
@@ -168,21 +176,29 @@ const styles = StyleSheet.create({
   detailButton: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',
+    backgroundColor: colors.surface,
   },
-  detailButtonPressed: { backgroundColor: '#F9FAFB' },
+  detailButtonPressed: { backgroundColor: colors.backgroundStrong },
   detailButtonText: { fontWeight: '600', color: colors.text },
   deleteButton: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: radii.md,
     backgroundColor: colors.danger,
     alignItems: 'center',
   },
   deleteButtonPressed: { backgroundColor: colors.dangerPressed },
   deleteButtonText: { color: '#fff', fontWeight: '600' },
-  emptyText: { marginTop: 20, textAlign: 'center', color: colors.textMuted },
+  emptyCard: {
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  emptyText: { textAlign: 'center', color: colors.textMuted },
 });
