@@ -4,8 +4,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { AppStackParamList } from '../types/navigation';
-import { getHabitById, deleteHabit } from '../services/habitService';
+import { getHabitById, deleteHabit, markHabitDoneToday } from '../services/habitService';
 import { scheduleHabitReminder } from '../services/reminderService';
+import { supabase } from '../services/supabaseClient';
 import { colors, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HabitDetail'>;
@@ -31,7 +32,7 @@ export default function HabitDetailScreen({ route, navigation }: Props) {
   const [doneToday, setDoneToday] = useState(false);
   const [marking, setMarking] = useState(false);
 
-  const loadHabitAndStatus = useCallback(async () => {
+  const loadHabit = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
 
