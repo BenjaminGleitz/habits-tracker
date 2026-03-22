@@ -8,19 +8,25 @@ import {
   Alert,
   Pressable,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { AppStackParamList } from '../types/navigation';
 import { supabase } from '../services/supabaseClient';
 import { getHabits, deleteHabit } from '../services/habitService';
+import type { Habit } from '../types/habit';
 import { colors, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: Props) {
-  const [habits, setHabits] = useState<any[]>([]);
+  const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
+
+  function getCacheKey(userId: string) {
+    return `habits_cache_${userId}`;
+  }
 
   useFocusEffect(
       useCallback(() => {
@@ -41,12 +47,33 @@ export default function HomeScreen({ navigation }: Props) {
       return;
     }
 
+    const cacheKey = getCacheKey(session.user.id);
+    let hasCache = false;
+
+    try {
+      const cachedHabitsRaw = await AsyncStorage.getItem(cacheKey);
+      if (cachedHabitsRaw) {
+        const cachedHabits = JSON.parse(cachedHabitsRaw) as Habit[];
+        setHabits(cachedHabits);
+        hasCache = true;
+      }
+    } catch {
+    }
+
     const { data, error } = await getHabits(session);
 
     if (error) {
-      Alert.alert('Erreur', error.message);
+      if (hasCache) {
+        Alert.alert('Mode hors ligne', 'Connexion indisponible : affichage des dernières habitudes enregistrées localement.');
+      } else {
+        Alert.alert('Erreur', error.message);
+      }
     } else if (data) {
       setHabits(data);
+      try {
+        await AsyncStorage.setItem(cacheKey, JSON.stringify(data));
+      } catch {
+      }
     }
 
     setLoading(false);
