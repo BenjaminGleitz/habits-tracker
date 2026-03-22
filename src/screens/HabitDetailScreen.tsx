@@ -115,7 +115,7 @@ export default function HabitDetailScreen({ route, navigation }: Props) {
 
     Alert.alert(
       'Activer un rappel',
-      "On va te demander la permission de notifications (Android 13+) pour te rappeler cette habitude.",
+        "On va te demander la permission de notifications pour te rappeler cette habitude.",
       [
         { text: 'Annuler', style: 'cancel' },
         {
@@ -124,11 +124,11 @@ export default function HabitDetailScreen({ route, navigation }: Props) {
             const result = await scheduleHabitReminder(habit.title, 10);
 
             if (!result.ok) {
-              Alert.alert('Permission refusée', 'Tu as refusé la permission notifications. Le rappel n\'a pas été programmé.');
+              Alert.alert('Permission refusée', "Tu as refusé la permission notifications. Le rappel local n'a pas été programmé.");
               return;
             }
 
-            Alert.alert('Rappel créé', 'Un rappel local sera déclenché dans 10 secondes.');
+            Alert.alert('Rappel créé', 'Une notification locale sera envoyée dans 10 secondes.');
           },
         },
       ]
