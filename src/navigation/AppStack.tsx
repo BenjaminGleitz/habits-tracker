@@ -13,29 +13,30 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
 
 export default function AppStack() {
   return (
-      <Stack.Navigator
-          screenOptions={{
-            headerStyle: { backgroundColor: colors.surface },
-            headerTintColor: colors.text,
-            headerTitleStyle: { fontWeight: '700' },
-            contentStyle: { backgroundColor: colors.background },
-          }}
-      >
-        <Stack.Screen
-            name="Home"
-            component={HomeScreen}
-            options={({ navigation }) => ({
-              title: 'Habits',
-              headerRight: () => (
-                  <Pressable onPress={() => navigation.navigate('Settings')}>
-                    <Text style={{ fontSize: 20 }}>⚙️</Text>
-                  </Pressable>
-              ),
-            })}
-        />
-        <Stack.Screen name="HabitDetail" component={HabitDetailScreen} options={{ title: 'Détail' }} />
-        <Stack.Screen name="HabitForm" component={HabitFormScreen} options={{ title: 'Habitude' }} />
-        <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Paramètres' }} />
-      </Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.surfaceStrong },
+        headerTintColor: colors.text,
+        headerShadowVisible: false,
+        headerTitleStyle: { fontWeight: '700' },
+        contentStyle: { backgroundColor: colors.background },
+      }}
+    >
+      <Stack.Screen
+        name="Home"
+        component={HomeScreen}
+        options={({ navigation }) => ({
+          title: 'Habits',
+          headerRight: () => (
+            <Pressable onPress={() => navigation.navigate('Settings')}>
+              <Text style={{ fontSize: 20 }}>⚙️</Text>
+            </Pressable>
+          ),
+        })}
+      />
+      <Stack.Screen name="HabitDetail" component={HabitDetailScreen} options={{ title: 'Détail' }} />
+      <Stack.Screen name="HabitForm" component={HabitFormScreen} options={{ title: 'Habitude' }} />
+      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Paramètres' }} />
+    </Stack.Navigator>
   );
 }
